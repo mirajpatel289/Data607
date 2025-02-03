@@ -1,0 +1,47 @@
+---
+title: "DATA607 Homework 1"
+author: "Miraj Patel"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In this assignment, I chose to work with data that shows people are superstitious to have a baby on Friday the 13th. I chose this topic as I was born on Friday the 13th and wanted to see how many births were on Friday the 13th from 1994 to 2003. You can read more about at https://fivethirtyeight.com/features/some-people-are-too-superstitious-to-have-a-baby-on-friday-the-13th/
+
+## Load .CSV file into a data.frame
+
+```{r load .csv file into data.frame, message=FALSE}
+
+USbirth <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/refs/heads/master/births/US_births_1994-2003_CDC_NCHS.csv")
+
+```
+
+## Rename the columns to match data
+
+```{r Rename column name to match data} 
+
+colnames(USbirth) <- c("Year", "Month", "Date", "Day", "Birth")
+
+```
+
+## Create subset of data including only Friday the 13th births
+
+This shows a table of births only on Friday the 13th, where the months are in ascending order (ex. January = 1, February = 2...)
+
+```{r Create subset of data that includes only Friday the 13th births}
+
+Friday13th <- subset(USbirth, Date == 13 & Day == 5, select = c(Year, Month, Birth) )
+
+print(Friday13th)
+
+```
+
+
+## Conclusion
+
+In conclusion, the subset data narrows down the births to only Friday the 13th. To show whether people are superstitious of Friday the 13th birthdays, one can compare the surrounding birthday dates. More data on birthdays would be useful as the 13th day rarely falls on a Friday.
