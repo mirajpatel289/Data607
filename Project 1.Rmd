@@ -1,0 +1,125 @@
+---
+title: "DATA607 Project 1"
+author: "Miraj Patel"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Introduction
+
+The goal for this project is to transform the chess tournament data in the a text file to a R Markdown file that generates a .CSV file. The data should show Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents. 
+
+```{r load-packages, message=FALSE}
+# Load necessary packages
+library(tidyverse)
+
+# Read the chess tournament data
+chess_tournament <- readLines('https://raw.githubusercontent.com/mirajpatel289/Data607/main/tournamentinfo.txt', warn = FALSE)
+
+# Remove header lines and filter out empty lines
+chess_tournament <- chess_tournament[-(1:3)]
+chess_tournament <- chess_tournament[chess_tournament != ""]
+
+# Remove rows with only dashes
+chess_tournament <- chess_tournament[!grepl("^[-]+$", chess_tournament)]
+
+# Split lines by delimiter |
+split_lines <- str_split(chess_tournament, "\\|")
+
+# Convert to data frame for easier manipulation
+df <- as.data.frame(do.call(rbind, split_lines), stringsAsFactors = FALSE, row.names = NULL)
+
+# Ensure proper column trimming
+df <- df %>%
+  mutate_all(str_trim)
+
+# Initialize a list to store player data and another for ratings lookup
+player_data_list <- list()
+ratings_lookup <- list()
+
+# Initialize a list for storing player pre-chess ratings
+player_pre_chess_rating_list <- list()
+
+# Extract the required information
+for (i in seq(1, nrow(df), by = 2)) {
+  if (i + 1 <= nrow(df)) {
+    row1 <- df[i, ]
+    row2 <- df[i + 1, ]
+    
+    player_id <- as.numeric(row1[1])
+    player_name <- row1[2]
+    total_points <- as.numeric(row1[3])
+    
+    # Clean and extract only numeric opponent IDs
+    opponent_ids <- row1[4:ncol(row1)]
+    opponent_ids <- gsub("[^0-9]", "", opponent_ids)
+    opponent_ids <- opponent_ids[opponent_ids != ""]  # remove empty elements
+    opponent_ids <- as.numeric(opponent_ids)
+
+    # Extract state and pre-rating from the second row
+    player_state <- row2[1]
+    pre_rating_str <- row2[2]
+
+    # Extract rating after ":" and before "-"
+    pre_rating_full <- str_extract(pre_rating_str, "(?<=R: )[^-]*")
+
+    player_data <- data.frame(
+      Player_ID = player_id,
+      Player_Name = player_name,
+      Player_State = player_state,
+      Total_Points = total_points,
+      Pre_Rating = pre_rating_full,
+      Opponent_IDs = I(list(opponent_ids)),
+      stringsAsFactors = FALSE
+    )
+
+    if (!is.na(pre_rating_full)) {
+      # Extract numeric part before any 'P' for calculating average
+      pre_rating_numeric <- as.numeric(str_extract(pre_rating_full, "\\d+"))
+      ratings_lookup[[as.character(player_id)]] <- pre_rating_full
+      player_pre_chess_rating_list <- append(player_pre_chess_rating_list, list(data.frame(Player_ID = player_id, Pre_Rating = pre_rating_numeric, stringsAsFactors = FALSE)))
+    }
+
+    player_data_list <- append(player_data_list, list(player_data))
+  }
+}
+
+# Convert lists to data frames
+player_data_df <- bind_rows(player_data_list)
+player_pre_chess_rating_df <- bind_rows(player_pre_chess_rating_list)
+
+# Replace opponent IDs with their pre-ratings
+for (i in 1:nrow(player_data_df)) {
+  opponent_ids <- player_data_df$Opponent_IDs[[i]]
+  opponent_ratings <- sapply(opponent_ids, function(opp_id) {
+    rating_row <- player_pre_chess_rating_df %>% filter(Player_ID == opp_id)
+    if (nrow(rating_row) > 0) {
+      return(rating_row$Pre_Rating)
+    } else {
+      return(NA)
+    }
+  })
+  player_data_df$Opponent_IDs[[i]] <- opponent_ratings
+}
+
+# Calculate the average opponent rating for each player, rounded to the nearest whole number
+player_data_df <- player_data_df %>%
+  rowwise() %>%
+  mutate(Average_Opponent_Rating = round(mean(unlist(Opponent_IDs), na.rm = TRUE))) %>%
+  ungroup()
+
+# Create a subset dataframe with selected columns and rename them
+chess_tournament_info <- player_data_df %>%
+  select(V2, V1, Total_Points, Pre_Rating, Average_Opponent_Rating)
+
+colnames(chess_tournament_info) <- c("Player Name", "State", "Total Points", "Player Pre-Rating", "Average Opponent Rating")
+
+# Save the subset dataframe
+write.csv(chess_tournament_info, "chess_tournament_info.csv", row.names = FALSE)
+print(chess_tournament_info)
+```
+
+...
+
