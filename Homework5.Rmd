@@ -1,0 +1,307 @@
+---
+title: "Tidying and Transforming Data"
+author: "Miraj Patel"
+date: "2025-03-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In this assignment, we will be comparing arrival delays of two airlines, Alaska and AM West, across five destinations. The main goal for this assignment is to tidy up and transform the data for easier analysis. Let us load the data file, and try to tidy/transform the data.
+
+```{r load library and import data file}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+
+#Import .CSV file
+arrival_delay <- read.csv('https://raw.githubusercontent.com/mirajpatel289/Data607/refs/heads/main/Week%205%20HW%20Table.csv')
+
+#remove 3rd row as its all N/A
+arrival_delay <- arrival_delay[-3,] 
+
+#add the airline 
+arrival_delay[2, "X"] <- "ALASKA"
+arrival_delay[4, "X"] <- "AM WEST"
+
+#pivot data
+arrival_delay <- arrival_delay %>% 
+  pivot_longer(
+    cols = Los.Angeles:Seattle,
+    names_to = "City",
+    values_to = "Count"
+  )
+
+print(arrival_delay)
+```
+
+## Analysis of the two flights
+
+Now, we will do individual analysis of each of the flights and their on time/delayed counts.
+
+```{r analysis airline}
+
+#new data frame for only Alaska and AM West
+
+alaska <- arrival_delay %>%
+  filter(X == "ALASKA")
+
+am_west <- arrival_delay %>%
+  filter(X == "AM WEST")
+
+#new data frames for on time and delayed for each flight
+
+alaska_ot <- alaska %>%
+  filter(X.1 == "on time")
+
+alaska_delay <- alaska %>%
+  filter(X.1 == "delayed")
+
+am_west_ot <- am_west %>%
+  filter(X.1 == "on time")
+
+am_west_delay <- am_west %>%
+  filter(X.1 == "delayed")
+
+#calculate on time and delayed flights counts and percentage
+
+alaska_delay_count <- sum(alaska_delay$Count)
+alaska_ot_count <- sum(alaska_ot$Count)
+alaska_percent_ot <- round((alaska_ot_count/(alaska_delay_count + alaska_ot_count)) * 100)
+
+am_west_delay_count <- sum(am_west_delay$Count)
+am_west_ot_count <- sum(am_west_ot$Count)
+am_west_percent_ot <- round((am_west_ot_count/(am_west_delay_count + am_west_ot_count)) * 100)
+
+#put these finding into their respective data frame
+
+alaska_summary <- data.frame(
+  Airline = "ALASKA",
+  TotalOnTime = alaska_ot_count,
+  TotalDelay = alaska_delay_count,
+  TotalFlights = alaska_ot_count + alaska_delay_count,
+  PercentOnTime = alaska_percent_ot
+)
+
+am_west_summary <- data.frame(
+  Airline = "AM WEST",
+  TotalOnTime = am_west_ot_count,
+  TotalDelay = am_west_delay_count,
+  TotalFlights = am_west_ot_count + am_west_delay_count,
+  PercentOnTime = am_west_percent_ot
+)
+
+#combine two data frames into one 
+
+airline_summary <- rbind(alaska_summary, am_west_summary)
+
+print(airline_summary)
+
+```
+
+Based on the table, AM West airline has almost double the amount of flights as Alaska airline. The delays for AM West is also higher than Alaska, which can be expected as there are more flights for AM West. The main point is the percentage of flights on time, which AM West is higher, 89% vs 87%. Having a larger amount of flights and a better on time percentage, AM West looks like an airline you would not expect to have delays compared to Alaska airline.
+
+
+## More In-Depth Analysis City by City
+
+Now we know which airline would be on time more often, but how do they vary city to city. In this data, we have 5 cities that these airlines go to. The cities are Los Angeles, Phoenix, San Diego, San Francisco, and Seattle. The first city we will compare from the list is Los Angeles, California.
+
+```{r LA analysis}
+
+#Alaska/LA data frame
+la_alaska <- data.frame(
+  Airline = "Alaska",
+  City = "Los Angeles",
+  Delayed = alaska_delay[1, 4],
+  OnTime = alaska_ot[1, 4],
+  Total = alaska_delay[1, 4] + alaska_ot[1, 4],
+  PercentOnTime = round((alaska_ot[1, 4] / (alaska_delay[1, 4] + alaska_ot[1, 4])) * 100)
+)
+
+colnames(la_alaska) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#AM West/LA data frame
+la_am_west <- data.frame(
+  Airline = "AM WEST",
+  City = "Los Angeles",
+  Delayed = am_west_delay[1, 4],
+  OnTime = am_west_ot[1, 4],
+  Total = am_west_delay[1, 4] + am_west_ot[1, 4],
+  PercentOnTime = round((am_west_ot[1, 4] / (am_west_delay[1, 4] + am_west_ot[1, 4])) * 100)
+)
+
+colnames(la_am_west) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#combine two data frames into one
+la_summary <- rbind(la_alaska, la_am_west)
+
+print(la_summary)
+
+```
+
+For the city of Los Angeles, Alaska airlines had 559 total flights and 89% of them were on time or 11% were delayed. AM West airlines had more total flights than Alaska airlines with a total of 811 flights. 86% of these AM West flights were on time. It would seem that you would expect more delayed flights from AM West solely based on the count (almost double the amount of delayed flights than Alaska), but this difference is due to amount of AM West flights.
+
+The next city we will compare is Phoenix, Arizona. 
+
+```{r Phx analysis}
+
+#Alaska/Phoenix data frame
+phx_alaska <- data.frame(
+  Airline = "Alaska",
+  City = "Phoenix",
+  Delayed = alaska_delay[2, 4],
+  OnTime = alaska_ot[2, 4],
+  Total = alaska_delay[2, 4] + alaska_ot[2, 4],
+  PercentOnTime = round((alaska_ot[2, 4] / (alaska_delay[2, 4] + alaska_ot[2, 4])) * 100)
+)
+
+colnames(phx_alaska) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#AM West/Phoenix data frame
+phx_am_west <- data.frame(
+  Airline = "AM WEST",
+  City = "Phoenix",
+  Delayed = am_west_delay[2, 4],
+  OnTime = am_west_ot[2, 4],
+  Total = am_west_delay[2, 4] + am_west_ot[2, 4],
+  PercentOnTime = round((am_west_ot[2, 4] / (am_west_delay[2, 4] + am_west_ot[2, 4])) * 100)
+)
+
+colnames(phx_am_west) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#combine two data frames into one
+phx_summary <- rbind(phx_alaska, phx_am_west)
+
+print(phx_summary)
+
+```
+
+In Phoenix, Alaska airlines presence is low compared to AM West airlines. Alaska has 233 total flights compared to AM West airlines 5255 total flights. The percent on time flights in Phoenix is higher for both airlines compared to Los Angeles. Again, Alaska has a better percentage of on time flights than AM West. Again, this is probably due to the amount of flights per airlines. Let's check if this trend continues to the next city, San Diego, California.
+
+```{r SD analysis}
+
+#Alaska/San Diego data frame
+sd_alaska <- data.frame(
+  Airline = "Alaska",
+  City = "San Diego",
+  Delayed = alaska_delay[3, 4],
+  OnTime = alaska_ot[3, 4],
+  Total = alaska_delay[3, 4] + alaska_ot[3, 4],
+  PercentOnTime = round((alaska_ot[3, 4] / (alaska_delay[3, 4] + alaska_ot[3, 4])) * 100)
+)
+
+colnames(sd_alaska) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#AM West/San Diego data frame
+sd_am_west <- data.frame(
+  Airline = "AM WEST",
+  City = "San Diego",
+  Delayed = am_west_delay[3, 4],
+  OnTime = am_west_ot[3, 4],
+  Total = am_west_delay[3, 4] + am_west_ot[3, 4],
+  PercentOnTime = round((am_west_ot[3, 4] / (am_west_delay[3, 4] + am_west_ot[3, 4])) * 100)
+)
+
+colnames(sd_am_west) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#combine two data frames into one
+sd_summary <- rbind(sd_alaska, sd_am_west)
+
+print(sd_summary)
+
+```
+
+From the table above, the amount of flights for AM West (448) is almost twice the amount of flights for Alaska (232). While this is the closest we have seen Alaska and AM West in terms of number of flights, AM West still has a lower percentage of on time flights in San Diego. The difference for total flights is smaller, but the difference for percent on time is larger. This is surprising to see as previously for AM West airlines the counts were vastly larger and the percentage on time was close to the percentage on time for Alaska. But for San Diego its the opposite, the counts are smaller and gap in percentage on time flights is wider.
+
+Moving onto another city in California, San Francisco. 
+
+```{r SF analysis}
+
+#Alaska/San Francisco data frame
+sf_alaska <- data.frame(
+  Airline = "Alaska",
+  City = "San Francisco",
+  Delayed = alaska_delay[4, 4],
+  OnTime = alaska_ot[4, 4],
+  Total = alaska_delay[4, 4] + alaska_ot[4, 4],
+  PercentOnTime = round((alaska_ot[4, 4] / (alaska_delay[4, 4] + alaska_ot[4, 4])) * 100)
+)
+
+colnames(sf_alaska) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#AM West/San Francisco data frame
+sf_am_west <- data.frame(
+  Airline = "AM WEST",
+  City = "San Francisco",
+  Delayed = am_west_delay[4, 4],
+  OnTime = am_west_ot[4, 4],
+  Total = am_west_delay[4, 4] + am_west_ot[4, 4],
+  PercentOnTime = round((am_west_ot[4, 4] / (am_west_delay[4, 4] + am_west_ot[4, 4])) * 100)
+)
+
+colnames(sf_am_west) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#combine two data frames into one
+sf_summary <- rbind(sf_alaska, sf_am_west)
+
+print(sf_summary)
+
+```
+
+This is the first city where there are more Alaska airline flights, 605, than AM West flights, 449. The number of delayed flights are almost the same but the number total flights are not. The trend of Alaska having a better percentage of on time flights remains true, 83% vs 71%. There is a higher percentage on delayed flights for both Alaska and AM West airlines. This could be due to variables such as weather, airport congestion, etc. 
+
+The last city we will do these comparisons for is Seattle, Washington. 
+
+```{r Sea analysis}
+
+#Alaska/Seattle data frame
+sea_alaska <- data.frame(
+  Airline = "Alaska",
+  City = "Seattle",
+  Delayed = alaska_delay[5, 4],
+  OnTime = alaska_ot[5, 4],
+  Total = alaska_delay[5, 4] + alaska_ot[5, 4],
+  PercentOnTime = round((alaska_ot[5, 4] / (alaska_delay[5, 4] + alaska_ot[5, 4])) * 100)
+)
+
+colnames(sea_alaska) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#AM West/Seattle data frame
+sea_am_west <- data.frame(
+  Airline = "AM WEST",
+  City = "Seattle",
+  Delayed = am_west_delay[5, 4],
+  OnTime = am_west_ot[5, 4],
+  Total = am_west_delay[5, 4] + am_west_ot[5, 4],
+  PercentOnTime = round((am_west_ot[5, 4] / (am_west_delay[5, 4] + am_west_ot[5, 4])) * 100)
+)
+
+colnames(sea_am_west) <- c("Airline", "City", "Delayed Flights", "On Time Flights", "Total Flights", "Percent On Time Flights" )
+
+#combine two data frames into one
+sea_summary <- rbind(sea_alaska, sea_am_west)
+
+print(sea_summary)
+
+```
+
+The second city where Alaska airlines has more total flights (almost 10 times more) than AM West airlines. The number of delayed flights for Alaska airlines is 5 times more than the number of delayed flights for AM West. With a larger number of delayed flights and total flights, Alaska airline still has a better on time flight percentage than AM West airline.
+
+To make the city by city analysis clearer, lets combine the tables into one.
+
+```{r combine the dataframes}
+
+city_summary <- rbind(la_summary, phx_summary, sd_summary, sf_summary, sea_summary)
+
+print(city_summary)
+
+```
+
+## Conclusion
+
+Looking at the overall analysis earlier, I said that AM West looks like the better choice overall. After performing the city by city analysis, I had to rethink whether AM West is better choice.  The analysis of the Alaska airlines and AM West airline across 5 different cities shows an example of [Simpson's Paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox). Simpson's Paradox is when trends observed within individual groups reverse or disappear when the groups are combined. The best example is AM West overall vs city by city. AM West airline had a worse on time flight percentage than Alaska airline across all 5 cities. When the cities data combined for Alaska and AM West, AM West had a higher on time flight percentage than Alaska. Why? This discrepancy could result from different numbers of flights per city, variables such as weather or airport congestion, or a disproportionate impact from high-traffic cities. 
+
