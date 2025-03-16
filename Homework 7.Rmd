@@ -1,0 +1,81 @@
+---
+title: "Homework 7"
+author: "Miraj Patel"
+date: "2025-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This week's assignment is to load 3 different types of files into R. The file types are HTML, XML, and JSON. The data is the same for all three types. The data includes three books with multiple authors and their attributes. First data type to import is HTML file.
+
+```{r html file}
+
+library(rvest)
+
+#Load html file
+book_html <- read_html("https://raw.githubusercontent.com/mirajpatel289/Data607/refs/heads/main/books.html")
+
+#Put data into table
+book_html_table <- book_html %>%
+  html_node("table") %>%
+  html_table()
+
+print(book_html_table)
+
+```
+
+Second data type to import is XML file.
+
+```{r xml file}
+
+library(xml2)
+library(dplyr)
+
+# Load the XML file
+xml_data <- read_xml("https://raw.githubusercontent.com/mirajpatel289/Data607/refs/heads/main/books.xml")
+
+# Extract book details
+titles <- xml_text(xml_find_all(xml_data, "//title"))
+authors <- xml_find_all(xml_data, "//authors/author") %>% xml_text()
+genres <- xml_text(xml_find_all(xml_data, "//genre"))
+pages <- xml_text(xml_find_all(xml_data, "//pages"))
+publish_years <- xml_text(xml_find_all(xml_data, "//publish_year"))
+
+# Create a data frame
+book_data <- data.frame(
+    Title = titles,
+    Authors = authors,
+    Genre = genres,
+    Pages = as.integer(pages),
+    Publish_Year = as.integer(publish_years)
+)
+
+print(book_data)
+
+
+```
+
+The last type of data to import is JSON file.
+
+```{r JSON file}
+
+library(jsonlite)
+
+# Load the JSON file
+json_data <- fromJSON("https://raw.githubusercontent.com/mirajpatel289/Data607/refs/heads/main/books.json")
+
+# Extract the 'library' list as a data frame
+book_json <- as.data.frame(json_data$library)
+
+# Display the results
+print(book_json)
+
+```
+
+After importing these three file types with the same data, the tables look almost the same. For all three files, the data was imported correctly and all the data was clearly presented in the tables. The biggest difference is the XML table where the books are repeated for each author. The JSON and HTML are similar, but HTML looks more clean.
+
