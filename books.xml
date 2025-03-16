@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library>
+    <book>
+        <title>Good Omens: The Nice and Accurate Prophecies of Agnes Nutter</title>
+        <authors>
+            <author>Terry Pratchett</author>
+            <author>Neil Gaiman</author>
+        </authors>
+        <genre>Fantasy</genre>
+        <pages>288</pages>
+        <publish_year>1990</publish_year>
+    </book>
+
+    <book>
+        <title>Enemy of my Enemy</title>
+        <authors>
+            <author>Melissa Mayberry</author>
+            <author>Travis Casey</author>
+        </authors>
+        <genre>Thriller</genre>
+        <pages>294</pages>
+        <publish_year>2016</publish_year>
+    </book>
+
+    <book>
+        <title>Black House</title>
+        <authors>
+            <author>Peter Straub</author>
+            <author>Stephen King</author>
+        </authors>
+        <genre>Horror</genre>
+        <pages>672</pages>
+        <publish_year>2001</publish_year>
+    </book>
+</library>
