@@ -1,0 +1,91 @@
+---
+title: "Homework 10"
+author: "Miraj Patel"
+date: "2025-04-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+##Introduction
+
+For this assignment, we are to do a sentimental analysis of a corpus of our choosing.
+
+```{r}
+
+#load libraries
+library(tidyverse)
+library(tidytext)
+library(janeaustenr)
+library(dplyr)
+library(stringr)
+library(knitr)
+library(ggplot2)
+library(gutenbergr)
+library(syuzhet)
+```
+
+##Sentimental Analysis
+
+Example from Text Mining with R, Chapter 2 looks at Sentiment Analysis. Citation: Silge, Julia, and David Robinson. "Text Mining with R: A Tidy Approach." O'Reilly Media, Inc., 2017.
+
+```{r}
+# Load primary example code from Chapter 2 of Text Mining with R
+get_sentiments("afinn")
+
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+```
+
+I will be choosing a book from using Project Gutenberg (URL: https://www.gutenberg.org/). This project is oldest digital library with many of world's literature. This project focuses on older books/works whose US copyright has expired. I used the R package "syuzhet" for the analysis. Within the R package, I used the Jockers-Rinker lexicon because it assigns continuous (rather than binary) sentiment scores to words, allowing for more nuanced detection of positive and negative sentiments in text. I decided to pick the book Wuthering Heights by  Emily Brontë for sentimental analysis. I've read this book before, and it predominantly conveys a tragic theme rather than a happy one. Let's examine whether the sentiment analysis supports this observation. 
+
+```{r}
+#Find ID for Wuthering Heights
+gutenberg_works() %>% dplyr::filter(title == "Wuthering Heights")
+
+#Download the data
+wuthering_heights <- gutenberg_download(768)
+
+#Tidying text
+tidy_wuthering_heights <- wuthering_heights %>%
+  unnest_tokens(word, text) %>% #splits text column into individual words
+  anti_join(stop_words) #removes common "stop words" like "the", "and", "of", etc 
+
+#Perform sentiment analysis using Jockers-Rinker
+wuthering_heights_sentiment_scores <- get_sentiment(tidy_wuthering_heights$word, method = "syuzhet")
+tidy_wuthering_heights$sentiment <- wuthering_heights_sentiment_scores
+
+#Summarize the sentiments
+wuthering_heights_sentiment_summary <- tidy_wuthering_heights %>%
+  mutate(linenumber = row_number()) %>%
+  group_by(index = linenumber %/% 100) %>% #Each index represents 100 lines of text
+  summarise(sentiment = sum(sentiment, na.rm = TRUE))
+
+#Display the first few rows of the summary table using kable
+wuthering_heights_sentiment_summary %>%
+  head() %>%
+  kable(caption = "Sentiment Summary for Wuthering Heights")
+```
+
+``` {r}
+#Plot sentiment analysis of "Wuthering Heights"
+ggplot(wuthering_heights_sentiment_summary, aes(x = index, y = sentiment)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Sentiment Analysis of Wuthering Heights",
+       x = "Text Segment",
+       y = "Sentiment Score")
+```
+
+##Conclusion
+
+The sentiment analysis of "Wuthering Heights" was conducted using the Jockers-Rinker sentiment lexicon. The text was segmented into smaller parts, each comprising 100 lines, and the sentiment scores for these segments were calculated and analyzed. The overall sentiment throughout "Wuthering Heights" reflects its predominantly tragic theme. This is supported by the negative sentiment scores in the book. There are positive sentiments in the book, which shows happier moments in the book. A bar graph was utilized to illustrate the sentiment distribution across the text's segments. The graph has certain segments that shows high negative sentiments scores, which helps confirm the tragic theme in the book.
